@@ -14,7 +14,7 @@
 
 MouvBrownien1 = function(n){
   Normk =rnorm(n,sd=sqrt(1/n)) # k simulations de loi normale (0,t(i)-t(i-1))
-  VecBrownien = cumsum(Normk) # on obtient le vecteur des sommes cumulées =  n mouvements browniens
+  VecBrownien = cumsum(Normk) # cumulated sums vector =  n Brownian motions
   VecBrownien
 }
 MouvBrownien1(100)
@@ -240,7 +240,7 @@ Graphe2(10,c(10,20))
 
 
 ################################################
-			Plots
+#			Plots
 ################################################
 
 M=100
@@ -261,7 +261,10 @@ lines(mc[,1],mc[,2],type="b",lty=2)
 
 
 
-############################### 2. Asian Options
+############################### 2. Application to pricing of Asian Options
+
+
+
 
 #################################################
 #	Classic Monte Carlo Method
@@ -270,18 +273,18 @@ lines(mc[,1],mc[,2],type="b",lty=2)
 
 
 
-CallAsiatique=function(B, S0, mu, sigma,  T){  ## valable que dans B&S , retourne la valeur en T
+CallAsiatique=function(B, S0, mu, sigma,  T){  
   n=length(B)
   t=seq(1/n, 1, by=1/n)*T #vector of the discretization steps
   
   S=S0*exp((mu-0.5*sigma^2)*t+sigma*B)
-  S=c(S0,S[1:n-1]) #vecteur des prix du sous-jacent
+  S=c(S0,S[1:n-1]) #vector of the underlying hedged item prices
   
   Calculation of I
   vecmoinsun=B[1:n-1] # Brownian motions (size p-1)
   vec=B[2:n] # vector of the Brownien Motions indexed+1 (soze p-1)
   difference=c(B[1],vec-vecmoinsun) #initialization at zero, then difference to obtain B(t)-B(t-1)
-  Trapeze= S * ( 1 + (mu*T)/(2*n) + sigma*difference/2 ) # schéma trapezoidal
+  Trapeze= S * ( 1 + (mu*T)/(2*n) + sigma*difference/2 ) # trapezoidal scheme
   I=mean(Trapeze)
   return (exp(-mu*T)*max(0,I)) #estimation for N simulations, with n steps for the trapezoidal method
 }
@@ -307,8 +310,6 @@ monteCarlo(10,10,10,0.5,0.2,10)
 ################################################
 
 
-
-
 MatriceBrownienRomberg=function (n,m,N){
 
   tempsn=matrix(c(seq(1/n,1,by=1/n),rep(1,n)),n,2) 
@@ -316,17 +317,17 @@ MatriceBrownienRomberg=function (n,m,N){
   temps=rbind(tempsn,tempsm)
 
   
-  triage=temps[order(temps[,1]),] #On trie par ordre des pas
-  pas=diff(c(0,triage[,1])) #On différencie
+  triage=temps[order(temps[,1]),] #Sort using the order of the steps
+  pas=diff(c(0,triage[,1])) #Differenciation
   
   Norm=t(matrix(rnorm((n+m)*N,0,sd=sqrt(rep(pas,N))),nrow=n+m,ncol=N))
-  B=t(apply(Norm,1,cumsum)) # N browniens de taille n+m, 1 ligne, 1 vecteur brownien  
-  Btriage=rbind(B,t(triage)) #Pour identifier les pas des browniens (1/m ou 1/n)
+  B=t(apply(Norm,1,cumsum)) # N Brownian motions of size n+m  
+  Btriage=rbind(B,t(triage)) #To identify steps of the BM (1/m or 1/n)
   
   MatBrown_n=Btriage[,Btriage[dim(Btriage)[1],]<2] 
-  MatBrown_n=MatBrown_n[-c(dim(MatBrown_n)[1]-1,dim(MatBrown_n)[1]),] #brownien pas 1/n
+  MatBrown_n=MatBrown_n[-c(dim(MatBrown_n)[1]-1,dim(MatBrown_n)[1]),] #BM step 1/n
   MatBrown_m=Btriage[,Btriage[dim(Btriage)[1],]>1]
-  MatBrown_m=MatBrown_m[-c(dim(MatBrown_m)[1]-1,dim(MatBrown_m)[1]),] #brownien pas 1/m
+  MatBrown_m=MatBrown_m[-c(dim(MatBrown_m)[1]-1,dim(MatBrown_m)[1]),] #BM step 1/m
   return (list(MatBrown_n,MatBrown_m))
  
 }
@@ -337,11 +338,11 @@ MatriceBrownienRomberg(10,10,10)
 #First part of En
 monteCarlo_pour_Romberg= function(n, m, Nn, S0, mu, sigma, T){
 	B=MatriceBrownienRomberg(n,m, Nn)
-	B[[1]]=B[[1]]*sqrt(T) #recuperation des browniens (n)
-	B[[2]]=B[[2]]*sqrt(T) #recuperation des browniens (m)
+	B[[1]]=B[[1]]*sqrt(T) #BM (n)
+	B[[2]]=B[[2]]*sqrt(T) #BM (m)
 
-	Q1=apply(B[[1]],1,CallAsiatique, S0=S0, mu=mu, sigma=sigma, T=T) #valeur du call pas n
-	Q2=apply(B[[2]],1,CallAsiatique, S0=S0, mu=mu, sigma=sigma, T=T)#valeur du call pas m
+	Q1=apply(B[[1]],1,CallAsiatique, S0=S0, mu=mu, sigma=sigma, T=T) #Value of the call ,  n
+	Q2=apply(B[[2]],1,CallAsiatique, S0=S0, mu=mu, sigma=sigma, T=T)#value of the call, m
 
 	E=Q1-Q2
 	res=mean(E)
@@ -351,7 +352,7 @@ monteCarlo_pour_Romberg(101,50,100,35,0.1,0.1,10)
 
 
 Estimation_Romberg=function(err, S0, mu, sigma, T){
-  n=floor(1/err)+1 # erreur 1/n, floor to avoid null values
+  n=floor(1/err)+1 # Error 1/n, floor to avoid null values
   m=floor(n^(1/3))+1
   Nn=floor(n^(4/3))+1
   Nm=n^2
@@ -393,7 +394,7 @@ Calcul_RMS_Romberg=function(n, M){
 
 	err=array(1/n, M)
 
-#Calculatin time
+#Calculation time
 	T1=Sys.time()
 	valeursSimulees=mapply(Estimation_Romberg, err=err, S0=S0, mu=mu, sigma=sigma, T=Temps)
 	T2=Sys.time()
@@ -406,6 +407,7 @@ Calcul_RMS_Romberg=function(n, M){
 Calcul_RMS_Romberg(10,20)
 
 Calcul_RMS_Montecarlo=function(n, M){
+
 #Parameters
 	param=param2(M)
 	S0=param[,1]
@@ -484,6 +486,13 @@ lines(b[,1],b[,2],type="b",lty=2)
 
 
 
+
+
+
+
+
+
+
 ###########################Using Sobol sequence
 
 library(fOptions)
@@ -491,15 +500,15 @@ library(randtoolbox)
 
 MouvBrownien1 = function(n){
   Normk =sobol(n , dim = 1, scrambling = 3, normal = TRUE) * sqrt(1/n)
- VecBrownien = cumsum(Normk) # on obtient le vecteur des sommes cumulées =  n mouvements browniens
+ VecBrownien = cumsum(Normk) # cumulated sums vector
   VecBrownien
 }
 MouvBrownien1(100)
 
 sobol(n = 10, dim = 1, scrambling = 3, normal = TRUE)
 
-#On simule N vecteurs de mouvements browniens de taille n (en vue de l'estimation des esperances)
-#en sortie matrice N x n
+#Simulation of N BM
+#output is a matrix N x n
 MatriceBrownienMC = function(N,n){
   mat = sapply(rep(n,length=N),MouvBrownien1)
   return(t(mat))
@@ -591,7 +600,7 @@ Graphe1=function(M,vecn){
 	return(res)
 }
 Graphe1(3,c(10,20))
-##On a bien les deux vecteurs attendus
+
 
 
 
