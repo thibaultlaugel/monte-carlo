@@ -4,7 +4,7 @@ Implementation of Romberg's variance reduction method for Monte Carlo, in R
 Monte Carlo project, in R
 
 
-This project aims at implementing a new variance reduction method based on Romberg's Statistic, and see its possible application in the pricing of Asian options in Finance. 
+This project aims at implementing a new variance reduction method based on [Romberg's Statistic](http://en.wikipedia.org/wiki/Romberg%27s_method), and see its possible application in the pricing of Asian options in Finance. 
 This project was done in the Monte Carlo course at ENSAE ParisTech in the Monte Carlo course in 2013, in collaboration with Leonor CHABANNES and Chloe LACOMBE. 
 
 The first part of this project is focusing on re-explaining and implementing the classic Monte Carlo method, and the calculation of the complexity of its algorithm.
